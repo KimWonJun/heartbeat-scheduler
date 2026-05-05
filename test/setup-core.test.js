@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { mkdtemp, readdir, readFile, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { promisify } from 'node:util';
 
 import {
   buildConfigFromSetupAnswers,
@@ -10,6 +12,8 @@ import {
   writeActiveConfig,
 } from '../src/setup-core.js';
 import { loadConfig } from '../src/config.js';
+
+const execFileAsync = promisify(execFile);
 
 test('buildConfigFromSetupAnswers creates profile config from setup answers', () => {
   const config = buildConfigFromSetupAnswers({
@@ -114,4 +118,35 @@ test('installConfiguredSchedule installs Windows task scripts when platform is w
   await stat(path.join(runtimeDir, 'scripts', 'run-windows.ps1'));
   const taskScripts = await readdir(taskScriptsDir);
   assert.deepEqual(taskScripts, ['CLI-Heartbeat-Scheduler-claude-0600.ps1']);
+});
+
+test('copied runtime can start non-setup commands without installed prompt dependencies', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'chs-runtime-no-node-modules-'));
+  const configPath = path.join(dir, 'config.json');
+  const runtimeDir = path.join(dir, 'runtime');
+  const runtimeConfigPath = path.join(runtimeDir, 'config.json');
+  const launchAgentsDir = path.join(dir, 'LaunchAgents');
+  const config = buildConfigFromSetupAnswers({
+    agents: ['claude'],
+    times: ['06:00'],
+    recurrenceType: 'daily',
+  });
+
+  await installConfiguredSchedule(config, {
+    sourceDir: process.cwd(),
+    configPath,
+    runtimeDir,
+    runtimeConfigPath,
+    launchAgentsDir,
+    load: false,
+  });
+
+  const { stdout } = await execFileAsync(process.execPath, [
+    path.join(runtimeDir, 'src', 'index.js'),
+    '--help',
+  ], {
+    cwd: runtimeDir,
+  });
+
+  assert.match(stdout, /Usage:/);
 });

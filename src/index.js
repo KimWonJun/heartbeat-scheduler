@@ -6,7 +6,6 @@ import { pruneStaleLaunchAgentFiles } from './platform/macos-launch-agent.js';
 import { pruneStaleWindowsTasks } from './platform/windows-task-scheduler.js';
 import { runJob } from './run-job.js';
 import { nextRuns, startScheduler } from './scheduler.js';
-import { runInteractiveSetup } from './setup.js';
 import { collectStatus, formatList, formatStatus } from './status.js';
 import { runDryProbe, runRealSmokeTest } from './test-runner.js';
 
@@ -19,6 +18,7 @@ async function main(argv) {
   }
 
   if (command === 'setup') {
+    const { runInteractiveSetup } = await import('./setup.js');
     const result = await runInteractiveSetup({
       configPath: flags.config || defaultConfigPath(),
       platform: flags.platform,
