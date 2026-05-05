@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { installLaunchAgentFiles, pruneStaleLaunchAgentFiles } from './platform/macos-launch-agent.js';
+import { installWindowsScheduledTasks, pruneStaleWindowsTasks } from './platform/windows-task-scheduler.js';
 import { runJob } from './run-job.js';
 
 export function buildDryProbeConfig(agents, options = {}) {
@@ -32,6 +33,40 @@ export function buildDryProbeConfig(agents, options = {}) {
 
 export async function runDryProbe(agents, options = {}) {
   const rootDir = options.rootDir || await mkdtemp(path.join(os.tmpdir(), 'chs-dry-probe-'));
+  const platform = options.platform || process.platform;
+  if (platform === 'win32') {
+    const load = options.load ?? false;
+    const runtimeDir = options.runtimeDir || path.join(rootDir, 'runtime');
+    const configPath = options.configPath || path.join(runtimeDir, 'config.json');
+    const taskScriptsDir = options.taskScriptsDir || path.join(rootDir, 'tasks');
+    const config = buildDryProbeConfig(agents, {
+      ...options,
+      rootDir,
+    });
+    const result = await installWindowsScheduledTasks(config, {
+      ...options,
+      runtimeDir,
+      configPath,
+      taskScriptsDir,
+      load,
+    });
+
+    if (options.cleanup !== false) {
+      await pruneStaleWindowsTasks({
+        ...options,
+        taskRows: result.installed.map((task) => ({ TaskName: task.taskName })),
+        desiredTaskNames: [],
+        unload: load,
+      });
+    }
+
+    return {
+      ...result,
+      rootDir,
+      taskScriptsDir,
+    };
+  }
+
   const launchAgentsDir = options.launchAgentsDir || path.join(rootDir, 'LaunchAgents');
   const runtimeDir = options.runtimeDir || path.join(rootDir, 'runtime');
   const configPath = options.configPath || path.join(runtimeDir, 'config.json');

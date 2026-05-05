@@ -3,6 +3,7 @@ import { loadConfig } from './config.js';
 import { runDoctor } from './doctor.js';
 import { defaultConfigPath, defaultLaunchAgentsDir } from './paths.js';
 import { pruneStaleLaunchAgentFiles } from './platform/macos-launch-agent.js';
+import { pruneStaleWindowsTasks } from './platform/windows-task-scheduler.js';
 import { runJob } from './run-job.js';
 import { nextRuns, startScheduler } from './scheduler.js';
 import { runInteractiveSetup } from './setup.js';
@@ -20,6 +21,7 @@ async function main(argv) {
   if (command === 'setup') {
     const result = await runInteractiveSetup({
       configPath: flags.config || defaultConfigPath(),
+      platform: flags.platform,
       load: flags.load !== 'false',
     });
     console.log(`Configured ${result.config.jobs.length} jobs`);
@@ -32,6 +34,18 @@ async function main(argv) {
   }
 
   if (command === 'uninstall') {
+    const platform = flags.platform || process.platform;
+    if (platform === 'win32') {
+      const removed = await pruneStaleWindowsTasks({
+        unload: flags.load !== 'false',
+      });
+      console.log(`Removed ${removed.length} Scheduled Task(s).`);
+      for (const taskName of removed) {
+        console.log(`  ${taskName}`);
+      }
+      return;
+    }
+
     const removed = await pruneStaleLaunchAgentFiles({
       launchAgentsDir: flags.launchAgentsDir || defaultLaunchAgentsDir(),
       desiredLabels: [],
@@ -48,8 +62,14 @@ async function main(argv) {
     const mode = flags.mode || 'dry';
     const agents = flags.agents || 'claude,codex,gemini';
     if (mode === 'dry') {
-      const result = await runDryProbe(agents);
-      console.log(`Dry probe generated ${result.installed.length} plist file(s) in ${result.launchAgentsDir}`);
+      const result = await runDryProbe(agents, {
+        platform: flags.platform,
+      });
+      if ((flags.platform || process.platform) === 'win32') {
+        console.log(`Dry probe generated ${result.installed.length} task script(s) in ${result.taskScriptsDir}`);
+      } else {
+        console.log(`Dry probe generated ${result.installed.length} plist file(s) in ${result.launchAgentsDir}`);
+      }
       return;
     }
 
@@ -75,6 +95,7 @@ async function main(argv) {
 
   if (command === 'status') {
     const statuses = await collectStatus(config, {
+      platform: flags.platform,
       includeLaunchctl: flags.launchctl !== 'false',
       launchAgentsDir: flags.launchAgentsDir,
     });
@@ -153,7 +174,7 @@ function printHelp() {
   node src/index.js setup [--config ~/.cli-heartbeat-scheduler/config.json]
   node src/index.js list [--config <config.json>] [--count 1]
   node src/index.js status [--config <config.json>]
-  node src/index.js test [--config <config.json>] [--mode dry|real] [--agents claude,codex]
+  node src/index.js test [--config <config.json>] [--mode dry|real] [--agents claude,codex] [--platform win32]
   node src/index.js uninstall
   node src/index.js doctor [--config <config.json>]
   node src/index.js next [--config <config.json>] [--count 3]

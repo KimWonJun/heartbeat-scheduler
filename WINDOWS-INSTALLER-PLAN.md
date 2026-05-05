@@ -2,7 +2,7 @@
 
 ## 목표
 
-현재 `cli-heartbeat-scheduler`는 provider 실행부는 Windows 친화적인 `spawn()` 기반이지만, 인터랙티브 자동 등록은 macOS LaunchAgent 중심입니다. 이 작업의 목표는 같은 `scheduleProfile` 설정을 Windows Task Scheduler에 등록할 수 있는 installer를 추가하는 것입니다.
+현재 `cli-heartbeat-scheduler`는 provider 실행부는 Windows 친화적인 `spawn()` 기반이며, 이 문서는 같은 `scheduleProfile` 설정을 Windows Task Scheduler에 등록하기 위한 installer 작업 내역과 남은 실기 검증 계획을 정리합니다.
 
 최종 사용 흐름은 macOS와 최대한 동일하게 유지합니다.
 
@@ -43,7 +43,7 @@ node src\index.js uninstall
 - macOS용 `./setup.sh`
 - legacy Windows one-shot script: `scripts/install-windows-once-5am.ps1`
 
-Windows에서 부족한 부분:
+구현된 부분:
 
 - profile 기반 Task Scheduler installer
 - stale scheduler-owned task 정리
@@ -52,6 +52,11 @@ Windows에서 부족한 부분:
 - Windows status/list/test/uninstall의 Task Scheduler 연동
 - Windows dry probe
 - Windows 문서와 검증 절차
+
+남은 부분:
+
+- 실제 Windows 10/11 환경에서 Task Scheduler 등록/실행/삭제 검증
+- 실제 Windows provider smoke test는 선택적으로 수행
 
 ## Windows runtime 위치
 
@@ -361,6 +366,8 @@ stale cleanup은 이 prefix를 가진 task만 대상으로 합니다.
 
 ### Phase W1: Windows Task 모델과 script generation
 
+상태: 완료
+
 목표:
 
 - Task name/action/trigger/settings를 순수 함수로 생성
@@ -380,6 +387,8 @@ stale cleanup은 이 prefix를 가진 task만 대상으로 합니다.
 - stale cleanup prefix 검증
 
 ### Phase W2: Runtime copy와 installer 통합
+
+상태: 완료
 
 목표:
 
@@ -401,6 +410,8 @@ stale cleanup은 이 prefix를 가진 task만 대상으로 합니다.
 - runtime copy에 `scripts/run-windows.ps1` 포함 확인
 
 ### Phase W3: CLI status/test/uninstall Windows 대응
+
+상태: 완료
 
 목표:
 
@@ -424,6 +435,8 @@ stale cleanup은 이 prefix를 가진 task만 대상으로 합니다.
 - Task Scheduler status parser 테스트
 
 ### Phase W4: Windows 실기 검증
+
+상태: 남음
 
 목표:
 
@@ -456,6 +469,8 @@ node src\index.js test --mode real --agents claude
 ```
 
 ### Phase W5: 문서화와 release 정리
+
+상태: 완료
 
 목표:
 

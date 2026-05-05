@@ -133,6 +133,16 @@ node src/index.js run --job <job-id>
 node src/index.js start
 ```
 
+Windows에서는 PowerShell entrypoint를 사용할 수 있습니다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+node src\index.js list
+node src\index.js status
+node src\index.js test --mode dry --agents claude,codex
+node src\index.js uninstall
+```
+
 별도 config를 지정할 수도 있습니다.
 
 ```bash
@@ -289,9 +299,42 @@ config.910am-test-once.json
 
 일반 사용은 `./setup.sh`를 권장합니다.
 
-## Windows 상태
+## Windows 사용법
 
-provider runner 자체는 `spawn()` 기반이라 Windows에서도 동작 가능한 구조입니다. 다만 Phase 6 기준 인터랙티브 자동 등록은 macOS LaunchAgent 중심입니다. Windows는 legacy PowerShell one-shot script가 남아 있으며, profile 기반 Task Scheduler 설치는 후속 작업으로 분리되어 있습니다.
+Windows installer는 Task Scheduler를 사용합니다. 현재 사용자 권한으로 `CLI Heartbeat Scheduler <job-id>` 형식의 task를 등록합니다.
+
+설정:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+dry 검증:
+
+```powershell
+node src\index.js test --mode dry --agents claude,codex
+```
+
+macOS나 CI에서 Windows task script 생성만 검증하려면:
+
+```bash
+node src/index.js test --mode dry --platform win32 --agents claude,codex
+```
+
+등록 상태 확인:
+
+```powershell
+node src\index.js status
+Get-ScheduledTask | Where-Object {$_.TaskName -like "CLI Heartbeat Scheduler*"}
+```
+
+삭제:
+
+```powershell
+node src\index.js uninstall
+```
+
+실제 Windows Task Scheduler 등록/실행 검증은 Windows 10/11 환경에서 수행해야 합니다.
 
 ## 문제 해결
 

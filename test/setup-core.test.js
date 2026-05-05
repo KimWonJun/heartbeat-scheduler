@@ -87,3 +87,31 @@ test('installConfiguredSchedule writes config, copies runtime, and installs plis
     'com.local.cli-heartbeat-scheduler.codex-0600.plist',
   ]);
 });
+
+test('installConfiguredSchedule installs Windows task scripts when platform is win32', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'chs-install-windows-'));
+  const configPath = path.join(dir, 'config.json');
+  const runtimeDir = path.join(dir, 'runtime');
+  const runtimeConfigPath = path.join(runtimeDir, 'config.json');
+  const taskScriptsDir = path.join(dir, 'tasks');
+  const config = buildConfigFromSetupAnswers({
+    agents: ['claude'],
+    times: ['06:00'],
+    recurrenceType: 'daily',
+  });
+
+  const result = await installConfiguredSchedule(config, {
+    platform: 'win32',
+    sourceDir: process.cwd(),
+    configPath,
+    runtimeDir,
+    runtimeConfigPath,
+    taskScriptsDir,
+    load: false,
+  });
+
+  assert.equal(result.installed.length, 1);
+  await stat(path.join(runtimeDir, 'scripts', 'run-windows.ps1'));
+  const taskScripts = await readdir(taskScriptsDir);
+  assert.deepEqual(taskScripts, ['CLI-Heartbeat-Scheduler-claude-0600.ps1']);
+});

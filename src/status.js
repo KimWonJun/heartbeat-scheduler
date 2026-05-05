@@ -3,6 +3,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { desiredLaunchAgents } from './platform/macos-launch-agent.js';
+import { desiredWindowsTasks, listWindowsScheduledTaskStatuses } from './platform/windows-task-scheduler.js';
 import { nextRuns } from './scheduler.js';
 
 export function formatList(config, options = {}) {
@@ -61,6 +62,27 @@ export async function readLatestRunLogs(logDir) {
 
 export async function collectStatus(config, options = {}) {
   const latestLogs = await readLatestRunLogs(config.logDir);
+  const platform = options.platform || process.platform;
+
+  if (platform === 'win32') {
+    const tasks = desiredWindowsTasks(config, options);
+    const taskStatuses = await listWindowsScheduledTaskStatuses(options);
+    const statusByName = new Map(taskStatuses.map((status) => [status.taskName, status]));
+
+    return tasks.map((task) => {
+      const taskStatus = statusByName.get(task.taskName);
+      return {
+        jobId: task.job.id,
+        provider: task.job.provider,
+        taskName: task.taskName,
+        registered: Boolean(taskStatus),
+        taskState: taskStatus?.state,
+        lastTaskResult: taskStatus?.lastTaskResult,
+        lastRun: latestLogs.get(task.job.id),
+      };
+    });
+  }
+
   const agents = desiredLaunchAgents(config, options);
 
   return Promise.all(agents.map(async (agent) => {
@@ -82,9 +104,11 @@ export function formatStatus(statuses) {
     item.jobId,
     `  provider: ${item.provider}`,
     `  registered: ${item.registered ? 'yes' : 'no'}`,
-    `  label: ${item.label}`,
+    item.label ? `  label: ${item.label}` : `  task: ${item.taskName}`,
+    item.taskState ? `  taskState: ${item.taskState}` : undefined,
+    item.lastTaskResult !== undefined ? `  lastTaskResult: ${item.lastTaskResult}` : undefined,
     item.lastRun ? `  last: ${item.lastRun.status} at ${item.lastRun.finishedAt}` : '  last: none',
-  ].join('\n')).join('\n');
+  ].filter(Boolean).join('\n')).join('\n');
 }
 
 async function fileExists(filePath) {
