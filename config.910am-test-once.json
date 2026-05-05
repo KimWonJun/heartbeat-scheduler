@@ -1,0 +1,24 @@
+{
+  "timezone": "Asia/Seoul",
+  "workdir": "~/.cli-heartbeat-scheduler/workdir",
+  "logDir": "~/.cli-heartbeat-scheduler/logs",
+  "stateDir": "~/.cli-heartbeat-scheduler/state",
+  "defaultTimeoutMs": 60000,
+  "maxOutputBytes": 20000,
+  "jobs": [
+    {
+      "id": "claude-910am-test-once",
+      "provider": "claude",
+      "schedule": "10 9 * * *",
+      "prompt": "test! 출력",
+      "enabled": true
+    },
+    {
+      "id": "codex-910am-test-once",
+      "provider": "codex",
+      "schedule": "10 9 * * *",
+      "prompt": "test! 출력만 하고 종료하세요.",
+      "enabled": true
+    }
+  ]
+}

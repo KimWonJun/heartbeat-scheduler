@@ -1,0 +1,16 @@
+{
+  "timezone": "Asia/Seoul",
+  "workdir": "~/.cli-heartbeat-scheduler/workdir",
+  "logDir": "~/.cli-heartbeat-scheduler/logs",
+  "stateDir": "~/.cli-heartbeat-scheduler/state",
+  "defaultTimeoutMs": 60000,
+  "maxOutputBytes": 20000,
+  "scheduleProfile": {
+    "agents": ["claude", "codex", "gemini"],
+    "times": ["06:00", "11:00", "16:00"],
+    "recurrence": {
+      "type": "daily"
+    },
+    "prompt": "test! 출력"
+  }
+}
