@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { normalizeConfig } from './config.js';
 import { copyRuntime, installMacOSLaunchAgents } from './platform/macos-launch-agent.js';
+import { installWindowsScheduledTasksWithPrune } from './platform/windows-task-scheduler.js';
 import { normalizeScheduleProfile } from './schedule-profile.js';
 
 export function buildConfigFromSetupAnswers(answers) {
@@ -50,6 +51,7 @@ export async function installConfiguredSchedule(config, options = {}) {
     runScriptPath,
     nodeBin = process.execPath,
     load = true,
+    platform = process.platform,
   } = options;
 
   if (!configPath) {
@@ -70,14 +72,28 @@ export async function installConfiguredSchedule(config, options = {}) {
     configTargetName: path.basename(runtimeConfigPath),
   });
 
-  return installMacOSLaunchAgents(config, {
-    runtimeDir,
-    configPath: runtimeConfigPath,
-    launchAgentsDir,
-    runScriptPath,
-    nodeBin,
-    load,
-  });
+  if (platform === 'win32') {
+    return installWindowsScheduledTasksWithPrune(config, {
+      ...options,
+      runtimeDir,
+      configPath: runtimeConfigPath,
+      nodeBin,
+      load,
+    });
+  }
+
+  if (platform === 'darwin') {
+    return installMacOSLaunchAgents(config, {
+      runtimeDir,
+      configPath: runtimeConfigPath,
+      launchAgentsDir,
+      runScriptPath,
+      nodeBin,
+      load,
+    });
+  }
+
+  throw new Error(`Unsupported scheduler install platform: ${platform}`);
 }
 
 function buildRecurrence(answers) {

@@ -325,11 +325,45 @@ node src/index.js status --config examples/config.schedule-profile.example.json 
 node src/index.js test --mode dry --agents claude,codex
 ```
 
-## Windows 설계 상태
+## Windows Task Scheduler 모델
 
-provider runner는 `spawn()` 기반이며 Windows에서도 동작할 수 있도록 shell 의존을 줄였습니다. 다만 Phase 6 기준 자동 schedule registration은 macOS LaunchAgent가 중심입니다.
+Windows는 Task Scheduler를 사용합니다. macOS LaunchAgent와 같은 config/profile 모델을 공유하되 platform module은 분리합니다.
 
-Windows Task Scheduler profile installer는 후속 phase로 남아 있습니다. 현재 repo에는 초기 검증용 PowerShell one-shot script가 legacy로 남아 있습니다.
+주요 파일:
+
+```text
+src/platform/windows-task-scheduler.js
+scripts/run-windows.ps1
+setup.ps1
+```
+
+Task name:
+
+```text
+CLI Heartbeat Scheduler <job-id>
+```
+
+Action:
+
+```text
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File <runtimeDir>\scripts\run-windows.ps1 ...
+```
+
+반복 방식:
+
+- `once`: `New-ScheduledTaskTrigger -Once -At <DateTime>`
+- `daily`: `New-ScheduledTaskTrigger -Daily -At <HH:MM>`
+- `weekdays`: `New-ScheduledTaskTrigger -Weekly -DaysOfWeek ... -At <HH:MM>`
+
+삭제 범위는 `CLI Heartbeat Scheduler ` prefix를 가진 task로 제한합니다. dry probe는 실제 Task Scheduler를 건드리지 않고 registration script만 생성할 수 있습니다.
+
+macOS 개발 환경에서도 다음 명령으로 Windows script generation을 검증할 수 있습니다.
+
+```bash
+node src/index.js test --mode dry --platform win32 --agents claude,codex
+```
+
+실제 Task Scheduler 등록과 실행 검증은 Windows 10/11에서 수행해야 합니다.
 
 ## Legacy 산출물
 

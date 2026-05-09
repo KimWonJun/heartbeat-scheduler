@@ -60,3 +60,14 @@ test('runRealSmokeTest executes selected fake provider jobs immediately', async 
   assert.equal(results[0].status, 'success');
   assert.equal(results[0].stdoutPreview.trim(), 'smoke-ok');
 });
+
+test('runDryProbe creates Windows task scripts without provider calls', async () => {
+  const result = await runDryProbe(['claude', 'codex'], {
+    platform: 'win32',
+    cleanup: false,
+  });
+
+  assert.equal(result.installed.length, 2);
+  assert.match(result.taskScriptsDir, /chs-dry-probe-/);
+  assert.match(result.installed[0].script, /Register-ScheduledTask/);
+});

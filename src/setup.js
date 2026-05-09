@@ -28,8 +28,9 @@ const WEEKDAY_CHOICES = [
 ];
 
 export async function runInteractiveSetup(options = {}) {
-  if (process.platform !== 'darwin') {
-    throw new Error('Interactive setup currently installs macOS LaunchAgents. Use the Node CLI commands on other platforms.');
+  const platform = options.platform || process.platform;
+  if (!['darwin', 'win32'].includes(platform)) {
+    throw new Error(`Interactive setup does not support platform: ${platform}`);
   }
 
   const configPath = options.configPath || defaultConfigPath();
@@ -115,6 +116,7 @@ export async function runInteractiveSetup(options = {}) {
     runtimeConfigPath,
     launchAgentsDir,
     runScriptPath: options.runScriptPath,
+    platform,
     load: options.load,
   });
 

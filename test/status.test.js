@@ -72,3 +72,35 @@ test('collectStatus combines jobs, plist existence, and latest logs without laun
   assert.equal(status[0].registered, true);
   assert.equal(status[0].lastRun.status, 'success');
 });
+
+test('collectStatus combines Windows task status and latest logs', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'chs-status-win-'));
+  const logDir = path.join(dir, 'logs');
+  await import('node:fs/promises').then(({ mkdir }) => mkdir(logDir, { recursive: true }));
+  await writeFile(
+    path.join(logDir, 'runs-2026-05-05.jsonl'),
+    `${JSON.stringify({ jobId: 'claude-0600', status: 'success', finishedAt: '2026-05-05T02:00:00Z' })}\n`,
+  );
+
+  const status = await collectStatus(
+    {
+      logDir,
+      jobs: [{ id: 'claude-0600', provider: 'claude', schedule: '0 6 * * *', enabled: true }],
+    },
+    {
+      platform: 'win32',
+      taskRows: [
+        {
+          TaskName: 'CLI Heartbeat Scheduler claude-0600',
+          State: 'Ready',
+          LastTaskResult: 0,
+        },
+      ],
+    },
+  );
+
+  assert.equal(status[0].registered, true);
+  assert.equal(status[0].taskName, 'CLI Heartbeat Scheduler claude-0600');
+  assert.equal(status[0].taskState, 'Ready');
+  assert.equal(status[0].lastRun.status, 'success');
+});
