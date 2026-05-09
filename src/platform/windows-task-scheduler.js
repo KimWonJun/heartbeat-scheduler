@@ -71,7 +71,7 @@ export function buildRegisterTaskScript(task) {
     `$Action = New-ScheduledTaskAction -Execute ${psQuote(task.actionExecute)} -Argument ${psQuote(task.actionArgs)} -WorkingDirectory ${psQuote(task.runtimeDir)}`,
     buildTriggerLine(task.trigger),
     '$Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 10)',
-    `$Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel LeastPrivilege`,
+    `$Principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Limited`,
     `Unregister-ScheduledTask -TaskName ${psQuote(task.taskName)} -Confirm:$false -ErrorAction SilentlyContinue`,
     `Register-ScheduledTask -TaskName ${psQuote(task.taskName)} -Action $Action -Trigger $Trigger -Settings $Settings -Principal $Principal -Description 'Local CLI heartbeat scheduler job' -Force | Out-Null`,
   ];
