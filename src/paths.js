@@ -20,3 +20,7 @@ export function defaultRuntimeConfigPath() {
 export function defaultLaunchAgentsDir() {
   return path.join(os.homedir(), 'Library', 'LaunchAgents');
 }
+
+export function defaultSystemdUserDir() {
+  return path.join(os.homedir(), '.config', 'systemd', 'user');
+}

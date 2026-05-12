@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import { desiredSystemdUnits } from './platform/linux-systemd.js';
 import { desiredLaunchAgents } from './platform/macos-launch-agent.js';
 import { desiredWindowsTasks, listWindowsScheduledTaskStatuses } from './platform/windows-task-scheduler.js';
 import { nextRuns } from './scheduler.js';
@@ -83,6 +84,23 @@ export async function collectStatus(config, options = {}) {
     });
   }
 
+  if (platform === 'linux') {
+    const units = desiredSystemdUnits(config, options);
+    return Promise.all(units.map(async (unit) => {
+      const registered = (await fileExists(unit.servicePath)) && (await fileExists(unit.timerPath));
+      return {
+        jobId: unit.job.id,
+        provider: unit.job.provider,
+        unitName: unit.unitName,
+        servicePath: unit.servicePath,
+        timerPath: unit.timerPath,
+        registered,
+        systemctl: options.includeSystemctl === false ? undefined : printSystemctlStatus(unit.unitName),
+        lastRun: latestLogs.get(unit.job.id),
+      };
+    }));
+  }
+
   const agents = desiredLaunchAgents(config, options);
 
   return Promise.all(agents.map(async (agent) => {
@@ -104,7 +122,11 @@ export function formatStatus(statuses) {
     item.jobId,
     `  provider: ${item.provider}`,
     `  registered: ${item.registered ? 'yes' : 'no'}`,
-    item.label ? `  label: ${item.label}` : `  task: ${item.taskName}`,
+    item.label
+      ? `  label: ${item.label}`
+      : item.unitName
+        ? `  unit: ${item.unitName}`
+        : `  task: ${item.taskName}`,
     item.taskState ? `  taskState: ${item.taskState}` : undefined,
     item.lastTaskResult !== undefined ? `  lastTaskResult: ${item.lastTaskResult}` : undefined,
     item.lastRun ? `  last: ${item.lastRun.status} at ${item.lastRun.finishedAt}` : '  last: none',
@@ -129,6 +151,23 @@ function printLaunchctl(label) {
   }
 
   const result = spawnSync('launchctl', ['print', `gui/${process.getuid()}/${label}`], {
+    stdio: 'pipe',
+    encoding: 'utf8',
+  });
+
+  return {
+    available: true,
+    status: result.status,
+    output: result.stdout || result.stderr,
+  };
+}
+
+function printSystemctlStatus(unitName) {
+  if (process.platform !== 'linux') {
+    return { available: false, output: 'systemctl is only available on Linux' };
+  }
+
+  const result = spawnSync('systemctl', ['--user', 'status', `${unitName}.timer`], {
     stdio: 'pipe',
     encoding: 'utf8',
   });
