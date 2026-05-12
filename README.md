@@ -9,7 +9,7 @@
 - Claude Code, Codex, Gemini CLI 지원
 - KST 기준 여러 실행 시간 설정 가능: 예를 들어 `06:00,11:00,16:00`
 - 실행 방식 선택 가능: one-shot, 매일 실행, 특정 요일 실행
-- macOS LaunchAgent / Windows Task Scheduler 자동 등록
+- macOS LaunchAgent / Linux systemd user timer / Windows Task Scheduler 자동 등록
 - 재설정 시 기존 scheduler-owned 등록 정리
 - provider를 실제 호출하지 않는 dry probe 테스트 제공
 - 실행 로그를 JSONL로 저장
@@ -29,12 +29,15 @@
 
 - macOS: 검증 완료
 - Windows 10/11 (PowerShell): 검증 완료
+- Linux (systemd user timer): 검증 완료
+
+Linux에서는 사용자 권한의 systemd user instance(`systemctl --user`)를 사용합니다. 시스템에 systemd가 있어야 하고, 등록된 timer는 사용자가 로그인되어 있을 때만 실행됩니다. 로그아웃 상태에서도 동작시키려면 `loginctl enable-linger $USER`로 linger를 켜야 합니다.
 
 ---
 
 # macOS / Linux 사용법
 
-## 빠른 시작 (macOS)
+## 빠른 시작
 
 ```bash
 cd /path/to/cli-heartbeat-scheduler
@@ -50,14 +53,16 @@ npm test
 3. 반복 방식 (one shot / 매일 / 특정 요일)
 4. 설정 후 테스트 여부 (dry probe / 안 함 / 실제 provider smoke test)
 
-설정 결과는 아래 위치에 저장됩니다.
+공통 설정 파일:
 
 ```text
 ~/.cli-heartbeat-scheduler/config.json
-~/.cli-heartbeat-scheduler/app           # launchd가 안전하게 실행할 runtime copy
+~/.cli-heartbeat-scheduler/app           # 스케줄러가 실행할 runtime copy
 ```
 
-## CLI 명령어 (macOS / Linux)
+플랫폼별 등록 위치는 아래 [등록 위치](#등록-위치) 참고.
+
+## CLI 명령어
 
 ```bash
 ./setup.sh
@@ -70,38 +75,78 @@ node src/index.js doctor
 node src/index.js next --count 3
 ```
 
-## 절전 상태와 실행 조건 (macOS)
+## 사전 준비 (Linux 전용)
 
-macOS LaunchAgent는 사용자의 GUI 세션과 컴퓨터가 깨어 있는 상태에서 실행됩니다. 컴퓨터가 절전 상태면 정해진 시각에 실행되지 않을 수 있습니다.
+macOS는 별도 준비 없이 `./setup.sh` 만 실행하면 됩니다. Linux는 systemd user instance를 사용하므로 아래 항목을 확인하세요.
 
-안정적으로 실행하려면:
+1. **Node.js 20 이상 설치** — 배포판 패키지나 nodejs.org LTS 사용 후 `node -v`로 확인.
+2. **systemd 사용자 인스턴스** — 일반 데스크톱/서버 배포판에서는 기본 활성화. `systemctl --user status` 가 동작해야 합니다.
+3. **provider CLI가 PATH에 있는지 확인** — service unit의 `Environment=PATH=` 에는 `~/.local/bin:/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin` 가 포함됩니다. 다른 위치에 설치된 CLI는 심볼릭 링크나 PATH 조정이 필요할 수 있습니다.
+4. **로그아웃 상태에서도 실행하고 싶다면** `loginctl enable-linger $USER` 로 linger를 활성화하세요. 활성화하지 않으면 사용자가 로그인되어 있을 때만 timer가 동작합니다.
 
-- Mac이 깨어 있어야 합니다.
-- 사용자의 GUI 세션이 유지되어야 합니다.
-- 네트워크가 필요한 provider는 네트워크 연결이 있어야 합니다.
-- provider CLI가 interactive login을 요구하지 않는 상태여야 합니다.
+## 등록 위치
 
-## 문제 해결 (macOS)
+**macOS (LaunchAgent):**
 
-CLI가 PATH에 보이는지 확인:
+```text
+~/Library/LaunchAgents/com.local.cli-heartbeat-scheduler.<job-id>.plist
+```
+
+**Linux (systemd user timer):**
+
+```text
+~/.config/systemd/user/cli-heartbeat-scheduler-<job-id>.service
+~/.config/systemd/user/cli-heartbeat-scheduler-<job-id>.timer
+```
+
+등록된 timer/agent 직접 확인:
+
+```bash
+# macOS
+launchctl print gui/$(id -u)/com.local.cli-heartbeat-scheduler.<job-id>
+
+# Linux
+systemctl --user list-timers --all 'cli-heartbeat-scheduler-*'
+systemctl --user status cli-heartbeat-scheduler-<job-id>.timer
+```
+
+## 절전 상태와 실행 조건
+
+**macOS (LaunchAgent)** — 사용자의 GUI 세션과 컴퓨터가 깨어 있는 상태에서만 실행됩니다. 절전/잠금 중에는 정해진 시각에 실행되지 않을 수 있습니다. Mac이 깨어 있고, GUI 세션이 유지되고, 네트워크가 필요한 provider는 연결되어 있어야 하며, provider CLI가 interactive login을 요구하지 않아야 합니다.
+
+**Linux (systemd user timer)** — 기본적으로 사용자가 로그인되어 있을 때만 실행됩니다. 로그아웃 상태에서도 실행시키려면 위 사전 준비의 `loginctl enable-linger`를 사용하세요. 시스템이 절전(suspend) 상태이면 timer 발화는 깨어난 후로 미뤄집니다.
+
+## 문제 해결
+
+CLI가 PATH에 보이는지 확인 (공통):
 
 ```bash
 node src/index.js doctor
 ```
 
-LaunchAgent는 있는데 실행되지 않을 때:
+**macOS — LaunchAgent는 등록되었는데 실행되지 않을 때:**
 
 ```bash
 launchctl print gui/$(id -u)/com.local.cli-heartbeat-scheduler.<job-id>
 ls -lt ~/.cli-heartbeat-scheduler/logs
 ```
 
-설정을 완전히 다시 하고 싶을 때:
+**Linux — timer는 등록되었는데 실행되지 않을 때:**
+
+```bash
+systemctl --user status cli-heartbeat-scheduler-<job-id>.timer
+journalctl --user -u cli-heartbeat-scheduler-<job-id>.service --since "1 hour ago"
+ls -lt ~/.cli-heartbeat-scheduler/logs
+```
+
+설정을 완전히 다시 하고 싶을 때 (공통):
 
 ```bash
 node src/index.js uninstall
 ./setup.sh
 ```
+
+`uninstall` 명령은 scheduler가 등록한 LaunchAgent / systemd unit만 제거하고 config와 log는 유지합니다.
 
 ---
 
@@ -195,7 +240,7 @@ powershell -ExecutionPolicy Bypass -File .\setup.ps1
 - `test --mode dry` — provider를 실제 호출하지 않고 plist/task 생성 흐름만 검증.
 - `test --mode real` — 실제 provider CLI를 즉시 호출 (요청이 발생할 수 있음).
 - `doctor` — workdir/logDir/stateDir 쓰기 권한, provider CLI의 PATH 인식 여부 확인.
-- `uninstall` — `com.local.cli-heartbeat-scheduler.*` / `CLI Heartbeat Scheduler *` 등록만 제거 (config/log는 유지).
+- `uninstall` — `com.local.cli-heartbeat-scheduler.*` (macOS) / `cli-heartbeat-scheduler-*` (Linux) / `CLI Heartbeat Scheduler *` (Windows) 등록만 제거 (config/log는 유지).
 
 ## Provider 호출 명령
 
@@ -238,6 +283,10 @@ gemini -p "test! 출력" --approval-mode plan --output-format text
 ~/.cli-heartbeat-scheduler/logs/<job-id>.launchd.out.log
 ~/.cli-heartbeat-scheduler/logs/<job-id>.launchd.err.log
 
+# Linux
+~/.cli-heartbeat-scheduler/logs/<job-id>.systemd.out.log
+~/.cli-heartbeat-scheduler/logs/<job-id>.systemd.err.log
+
 # Windows
 %USERPROFILE%\.cli-heartbeat-scheduler\logs\<job-id>.task.out.log
 %USERPROFILE%\.cli-heartbeat-scheduler\logs\<job-id>.task.err.log
@@ -256,4 +305,10 @@ macOS에서 Windows task script 생성만 검증:
 
 ```bash
 node src/index.js test --mode dry --platform win32 --agents claude,codex
+```
+
+다른 플랫폼에서 Linux systemd unit 생성만 검증:
+
+```bash
+node src/index.js test --mode dry --platform linux --agents claude,codex
 ```

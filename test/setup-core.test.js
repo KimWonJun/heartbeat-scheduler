@@ -75,6 +75,7 @@ test('installConfiguredSchedule writes config, copies runtime, and installs plis
   });
 
   const result = await installConfiguredSchedule(config, {
+    platform: 'darwin',
     sourceDir: process.cwd(),
     configPath,
     runtimeDir,
@@ -89,6 +90,39 @@ test('installConfiguredSchedule writes config, copies runtime, and installs plis
   assert.deepEqual(launchAgentFiles.sort(), [
     'com.local.cli-heartbeat-scheduler.claude-0600.plist',
     'com.local.cli-heartbeat-scheduler.codex-0600.plist',
+  ]);
+});
+
+test('installConfiguredSchedule installs systemd unit pairs when platform is linux', async () => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'chs-install-linux-'));
+  const configPath = path.join(dir, 'config.json');
+  const runtimeDir = path.join(dir, 'runtime');
+  const runtimeConfigPath = path.join(runtimeDir, 'config.json');
+  const systemdUserDir = path.join(dir, 'units');
+  const config = buildConfigFromSetupAnswers({
+    agents: ['claude', 'codex'],
+    times: ['06:00'],
+    recurrenceType: 'daily',
+  });
+
+  const result = await installConfiguredSchedule(config, {
+    platform: 'linux',
+    sourceDir: process.cwd(),
+    configPath,
+    runtimeDir,
+    runtimeConfigPath,
+    systemdUserDir,
+    load: false,
+  });
+
+  assert.equal(result.installed.length, 2);
+  await stat(path.join(runtimeDir, 'scripts', 'run-linux.sh'));
+  const unitFiles = await readdir(systemdUserDir);
+  assert.deepEqual(unitFiles.sort(), [
+    'cli-heartbeat-scheduler-claude-0600.service',
+    'cli-heartbeat-scheduler-claude-0600.timer',
+    'cli-heartbeat-scheduler-codex-0600.service',
+    'cli-heartbeat-scheduler-codex-0600.timer',
   ]);
 });
 
@@ -133,6 +167,7 @@ test('copied runtime can start non-setup commands without installed prompt depen
   });
 
   await installConfiguredSchedule(config, {
+    platform: 'darwin',
     sourceDir: process.cwd(),
     configPath,
     runtimeDir,

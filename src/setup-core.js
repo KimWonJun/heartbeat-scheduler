@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { normalizeConfig } from './config.js';
+import { copyLinuxRuntime, installLinuxSystemdUnits } from './platform/linux-systemd.js';
 import { copyRuntime, installMacOSLaunchAgents } from './platform/macos-launch-agent.js';
 import { installWindowsScheduledTasksWithPrune } from './platform/windows-task-scheduler.js';
 import { normalizeScheduleProfile } from './schedule-profile.js';
@@ -65,12 +66,21 @@ export async function installConfiguredSchedule(config, options = {}) {
   }
 
   await writeActiveConfig(config, configPath);
-  await copyRuntime({
-    sourceDir,
-    runtimeDir,
-    configFile: configPath,
-    configTargetName: path.basename(runtimeConfigPath),
-  });
+  if (platform === 'linux') {
+    await copyLinuxRuntime({
+      sourceDir,
+      runtimeDir,
+      configFile: configPath,
+      configTargetName: path.basename(runtimeConfigPath),
+    });
+  } else {
+    await copyRuntime({
+      sourceDir,
+      runtimeDir,
+      configFile: configPath,
+      configTargetName: path.basename(runtimeConfigPath),
+    });
+  }
 
   if (platform === 'win32') {
     return installWindowsScheduledTasksWithPrune(config, {
@@ -87,6 +97,17 @@ export async function installConfiguredSchedule(config, options = {}) {
       runtimeDir,
       configPath: runtimeConfigPath,
       launchAgentsDir,
+      runScriptPath,
+      nodeBin,
+      load,
+    });
+  }
+
+  if (platform === 'linux') {
+    return installLinuxSystemdUnits(config, {
+      ...options,
+      runtimeDir,
+      configPath: runtimeConfigPath,
       runScriptPath,
       nodeBin,
       load,

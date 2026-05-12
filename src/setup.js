@@ -6,6 +6,7 @@ import {
   defaultLaunchAgentsDir,
   defaultRuntimeConfigPath,
   defaultRuntimeDir,
+  defaultSystemdUserDir,
 } from './paths.js';
 import { buildConfigFromSetupAnswers, installConfiguredSchedule } from './setup-core.js';
 import { runDryProbe, runRealSmokeTest } from './test-runner.js';
@@ -29,7 +30,7 @@ const WEEKDAY_CHOICES = [
 
 export async function runInteractiveSetup(options = {}) {
   const platform = options.platform || process.platform;
-  if (!['darwin', 'win32'].includes(platform)) {
+  if (!['darwin', 'linux', 'win32'].includes(platform)) {
     throw new Error(`Interactive setup does not support platform: ${platform}`);
   }
 
@@ -37,6 +38,7 @@ export async function runInteractiveSetup(options = {}) {
   const runtimeDir = options.runtimeDir || defaultRuntimeDir();
   const runtimeConfigPath = options.runtimeConfigPath || defaultRuntimeConfigPath();
   const launchAgentsDir = options.launchAgentsDir || defaultLaunchAgentsDir();
+  const systemdUserDir = options.systemdUserDir || defaultSystemdUserDir();
   const defaults = await loadSetupDefaults(configPath);
 
   const agents = await checkbox({
@@ -115,6 +117,7 @@ export async function runInteractiveSetup(options = {}) {
     runtimeDir,
     runtimeConfigPath,
     launchAgentsDir,
+    systemdUserDir,
     runScriptPath: options.runScriptPath,
     platform,
     load: options.load,
