@@ -136,6 +136,9 @@ WantedBy=timers.target
 export async function installSystemdUnitFiles(config, options = {}) {
   const systemdUserDir = options.systemdUserDir || defaultSystemdUserDir();
   await mkdir(systemdUserDir, { recursive: true });
+  if (config.logDir) {
+    await mkdir(config.logDir, { recursive: true });
+  }
   const units = desiredSystemdUnits(config, { ...options, systemdUserDir });
   const installed = [];
 

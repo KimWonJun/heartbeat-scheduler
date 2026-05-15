@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -134,6 +134,8 @@ test('installSystemdUnitFiles writes service and timer pairs without invoking sy
   ]);
   const service = await readFile(result.installed[0].servicePath, 'utf8');
   assert.match(service, /run-linux\.sh/);
+  const logDirStat = await stat(path.join(dir, 'logs'));
+  assert.ok(logDirStat.isDirectory(), 'logDir must be created so systemd can append StandardOutput/StandardError');
 });
 
 test('pruneStaleSystemdUnits removes stale scheduler-owned unit files only', async () => {
