@@ -6,7 +6,7 @@
   "defaultTimeoutMs": 60000,
   "maxOutputBytes": 20000,
   "scheduleProfile": {
-    "agents": ["claude", "codex", "gemini"],
+    "agents": ["claude", "codex", "antigravity"],
     "times": ["06:00", "11:00", "16:00"],
     "recurrence": {
       "type": "daily"

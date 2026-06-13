@@ -1,12 +1,12 @@
 # CLI Heartbeat Scheduler
 
-`cli-heartbeat-scheduler`는 Claude Code, Codex, Gemini CLI에 짧은 로컬 CLI 프롬프트를 정해진 시간에 실행하는 Node.js 스케줄러입니다.
+`cli-heartbeat-scheduler`는 Claude Code, Codex, Antigravity CLI에 짧은 로컬 CLI 프롬프트를 정해진 시간에 실행하는 Node.js 스케줄러입니다.
 
 이 프로젝트는 API 자동화가 아닙니다. 이미 컴퓨터에 로그인되어 있는 CLI 세션을 사용해 `test! 출력` 같은 짧은 명령을 실행하고, 출력과 상태를 기록한 뒤 바로 종료합니다. 대화 세션을 이어가거나 긴 agent 작업을 돌리는 용도가 아닙니다.
 
 ## 핵심 특징
 
-- Claude Code, Codex, Gemini CLI 지원
+- Claude Code, Codex, Antigravity CLI 지원
 - KST 기준 여러 실행 시간 설정 가능: 예를 들어 `06:00,11:00,16:00`
 - 실행 방식 선택 가능: one-shot, 매일 실행, 특정 요일 실행
 - macOS LaunchAgent / Linux systemd user timer / Windows Task Scheduler 자동 등록
@@ -21,7 +21,7 @@
 - 사용할 CLI는 미리 설치 및 로그인 필요
   - Claude Code CLI: `claude`
   - Codex CLI: `codex`
-  - Gemini CLI: `gemini`
+  - Antigravity CLI: `agy`
 
 로그인은 이 스케줄러가 처리하지 않습니다. 각 CLI를 터미널에서 한 번 직접 실행해 로그인 상태를 만들어 둔 뒤 사용하세요.
 
@@ -48,7 +48,7 @@ npm test
 
 `./setup.sh`를 실행하면 다음 항목을 순서대로 묻습니다.
 
-1. 설정할 AI agent (Claude Code / Codex / Gemini CLI)
+1. 설정할 AI agent (Claude Code / Codex / Antigravity CLI)
 2. 실행 시간 (KST `HH:MM`, 여러 개는 쉼표 구분: `06:00,11:00,16:00`)
 3. 반복 방식 (one shot / 매일 / 특정 요일)
 4. 설정 후 테스트 여부 (dry probe / 안 함 / 실제 provider smoke test)
@@ -68,7 +68,7 @@ npm test
 ./setup.sh
 node src/index.js list
 node src/index.js status
-node src/index.js test --mode dry --agents claude,codex
+node src/index.js test --mode dry --agents claude,codex,antigravity
 node src/index.js test --mode real --agents claude
 node src/index.js uninstall
 node src/index.js doctor
@@ -157,7 +157,7 @@ Windows installer는 Task Scheduler를 사용합니다. 현재 사용자 권한�
 ## Windows 사전 준비
 
 1. **Node.js 20 이상 설치** — [nodejs.org](https://nodejs.org/)에서 LTS 설치 후 PowerShell을 새로 열어 `node -v`로 확인.
-2. **PATH 환경변수 확인** — Task Scheduler가 task 실행 시 일반 PowerShell 세션과 다른 환경을 가질 수 있으므로, `node`와 사용할 CLI(`claude`, `codex`, `gemini`)가 시스템 PATH에 등록되어 있는지 반드시 확인하세요.
+2. **PATH 환경변수 확인** — Task Scheduler가 task 실행 시 일반 PowerShell 세션과 다른 환경을 가질 수 있으므로, `node`와 사용할 CLI(`claude`, `codex`, `agy`)가 시스템 PATH에 등록되어 있는지 반드시 확인하세요.
    - 시스템 속성 → 환경 변수 → 시스템 변수 `Path`에 Node.js 설치 경로(예: `C:\Program Files\nodejs\`)와 각 CLI 설치 경로 포함.
    - 사용자 변수가 아닌 **시스템 변수**에 두는 편이 Task Scheduler 환경에서 안정적입니다.
 3. **PowerShell 실행 정책** — 아래 명령은 `-ExecutionPolicy Bypass`로 실행하므로 별도 정책 변경은 필요 없습니다.
@@ -186,7 +186,7 @@ setup이 묻는 항목은 macOS와 동일합니다 (agent / 실행 시간 / 반�
 powershell -ExecutionPolicy Bypass -File .\setup.ps1
 node src\index.js list
 node src\index.js status
-node src\index.js test --mode dry --agents claude,codex
+node src\index.js test --mode dry --agents claude,codex,antigravity
 node src\index.js uninstall
 ```
 
@@ -256,10 +256,10 @@ Codex:
 codex --ask-for-approval never exec --ephemeral --skip-git-repo-check --sandbox read-only "test! 출력"
 ```
 
-Gemini CLI:
+Antigravity CLI:
 
 ```bash
-gemini -p "test! 출력" --approval-mode plan --output-format text
+agy --sandbox --print "test! 출력"
 ```
 
 ## 로그와 상태 파일

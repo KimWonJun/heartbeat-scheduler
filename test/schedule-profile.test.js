@@ -22,13 +22,13 @@ test('normalizeScheduleProfile validates agents, times, recurrence, and prompt d
 
 test('normalizeScheduleProfile supports selected weekdays', () => {
   const profile = normalizeScheduleProfile({
-    agents: ['gemini'],
+    agents: ['antigravity'],
     times: ['09:30'],
     recurrence: { type: 'weekdays', weekdays: ['fri', 'mon', 'mon'] },
     prompt: 'ping',
   });
 
-  assert.deepEqual(profile.agents, ['gemini']);
+  assert.deepEqual(profile.agents, ['antigravity']);
   assert.deepEqual(profile.times, ['09:30']);
   assert.deepEqual(profile.recurrence, { type: 'weekdays', weekdays: ['mon', 'fri'] });
   assert.equal(profile.prompt, 'ping');
@@ -45,7 +45,7 @@ test('normalizeScheduleProfile rejects invalid profiles', () => {
 
 test('expandScheduleProfile creates stable jobs for each agent and time', () => {
   const jobs = expandScheduleProfile({
-    agents: ['claude', 'codex', 'gemini'],
+    agents: ['claude', 'codex', 'antigravity'],
     times: ['06:00', '11:00'],
     recurrence: { type: 'daily' },
     prompt: 'test! 출력',
@@ -58,8 +58,8 @@ test('expandScheduleProfile creates stable jobs for each agent and time', () => 
       ['claude-1100', 'claude', '0 11 * * *', 'test! 출력'],
       ['codex-0600', 'codex', '0 6 * * *', 'test! 출력'],
       ['codex-1100', 'codex', '0 11 * * *', 'test! 출력'],
-      ['gemini-0600', 'gemini', '0 6 * * *', 'test! 출력'],
-      ['gemini-1100', 'gemini', '0 11 * * *', 'test! 출력'],
+      ['antigravity-0600', 'antigravity', '0 6 * * *', 'test! 출력'],
+      ['antigravity-1100', 'antigravity', '0 11 * * *', 'test! 출력'],
     ],
   );
 });
@@ -99,7 +99,7 @@ test('normalizeConfig expands scheduleProfile into existing jobs contract', () =
 test('normalizeConfig allows explicit jobs to coexist with generated jobs', () => {
   const config = normalizeConfig({
     scheduleProfile: {
-      agents: ['gemini'],
+      agents: ['antigravity'],
       times: ['09:00'],
       recurrence: { type: 'once' },
       prompt: 'profile',
@@ -114,6 +114,6 @@ test('normalizeConfig allows explicit jobs to coexist with generated jobs', () =
     ],
   });
 
-  assert.deepEqual(config.jobs.map((job) => job.id), ['gemini-0900', 'manual-claude']);
+  assert.deepEqual(config.jobs.map((job) => job.id), ['antigravity-0900', 'manual-claude']);
   assert.equal(config.jobs[0].recurrence.type, 'once');
 });

@@ -33,7 +33,7 @@ test('buildConfigFromSetupAnswers creates profile config from setup answers', ()
 
 test('buildConfigFromSetupAnswers supports selected weekdays', () => {
   const config = buildConfigFromSetupAnswers({
-    agents: ['gemini'],
+    agents: ['antigravity'],
     times: ['09:30'],
     recurrenceType: 'weekdays',
     weekdays: ['fri', 'mon'],

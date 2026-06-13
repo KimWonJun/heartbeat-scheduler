@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { buildAntigravityCommand } from '../src/providers/antigravity.js';
 import { buildClaudeCommand } from '../src/providers/claude.js';
 import { buildCodexCommand } from '../src/providers/codex.js';
-import { buildGeminiCommand } from '../src/providers/gemini.js';
 import { buildProviderCommand } from '../src/providers/index.js';
 
 test('buildClaudeCommand creates non-persistent no-tools print invocation', () => {
@@ -49,8 +49,8 @@ test('provider commands append extraArgs before prompt', () => {
     ['--model', 'gpt-5.4', 'hi'],
   );
   assert.deepEqual(
-    buildGeminiCommand({ prompt: 'hi', extraArgs: ['--model', 'gemini-2.5-pro'] }).args,
-    ['--model', 'gemini-2.5-pro', '-p', 'hi', '--approval-mode', 'plan', '--output-format', 'text'],
+    buildAntigravityCommand({ prompt: 'hi', extraArgs: ['--model', 'default'] }).args,
+    ['--model', 'default', '--sandbox', '--print', 'hi'],
   );
 });
 
@@ -64,28 +64,25 @@ test('provider commands allow full commandArgs override for tests and custom pro
     { file: 'node', args: ['-e', 'console.log("ok")'] },
   );
   assert.deepEqual(
-    buildGeminiCommand({ command: 'node', commandArgs: ['-e', 'console.log("ok")'], prompt: 'ignored' }),
+    buildAntigravityCommand({ command: 'node', commandArgs: ['-e', 'console.log("ok")'], prompt: 'ignored' }),
     { file: 'node', args: ['-e', 'console.log("ok")'] },
   );
 });
 
-test('buildGeminiCommand creates headless read-only plan invocation', () => {
-  const command = buildGeminiCommand({ prompt: 'test! 출력' });
+test('buildAntigravityCommand creates sandboxed print invocation', () => {
+  const command = buildAntigravityCommand({ prompt: 'test! 출력' });
 
-  assert.equal(command.file, 'gemini');
+  assert.equal(command.file, 'agy');
   assert.deepEqual(command.args, [
-    '-p',
+    '--sandbox',
+    '--print',
     'test! 출력',
-    '--approval-mode',
-    'plan',
-    '--output-format',
-    'text',
   ]);
 });
 
-test('buildProviderCommand routes gemini provider', () => {
-  const command = buildProviderCommand({ provider: 'gemini', prompt: 'hello' });
+test('buildProviderCommand routes antigravity provider', () => {
+  const command = buildProviderCommand({ provider: 'antigravity', prompt: 'hello' });
 
-  assert.equal(command.file, 'gemini');
-  assert.deepEqual(command.args, ['-p', 'hello', '--approval-mode', 'plan', '--output-format', 'text']);
+  assert.equal(command.file, 'agy');
+  assert.deepEqual(command.args, ['--sandbox', '--print', 'hello']);
 });

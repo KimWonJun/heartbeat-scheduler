@@ -74,7 +74,7 @@ async function main(argv) {
 
   if (command === 'test') {
     const mode = flags.mode || 'dry';
-    const agents = flags.agents || 'claude,codex,gemini';
+    const agents = flags.agents || 'claude,codex,antigravity';
     if (mode === 'dry') {
       const result = await runDryProbe(agents, {
         platform: flags.platform,

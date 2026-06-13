@@ -8,7 +8,7 @@ import { validateCronExpression } from './scheduler.js';
 const DEFAULT_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_OUTPUT_BYTES = 20_000;
 const DEFAULT_ROOT_DIR = '~/.cli-heartbeat-scheduler';
-const PROVIDERS = new Set(['claude', 'codex', 'gemini']);
+const PROVIDERS = new Set(['claude', 'codex', 'antigravity']);
 
 export function expandHome(value) {
   if (typeof value !== 'string') {

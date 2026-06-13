@@ -15,7 +15,7 @@ import { parseTimeList } from './time.js';
 const AGENT_CHOICES = [
   { name: 'Claude Code', value: 'claude' },
   { name: 'Codex', value: 'codex' },
-  { name: 'Gemini CLI', value: 'gemini' },
+  { name: 'Antigravity CLI', value: 'antigravity' },
 ];
 
 const WEEKDAY_CHOICES = [

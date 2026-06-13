@@ -37,9 +37,9 @@ test('buildTimerUnit emits OnCalendar with timezone for daily recurrence', () =>
 
 test('buildTimerUnit emits weekday list when recurrence is weekdays', () => {
   const unit = buildTimerUnit({
-    unitName: 'cli-heartbeat-scheduler-gemini-1605',
+    unitName: 'cli-heartbeat-scheduler-antigravity-1605',
     job: {
-      id: 'gemini-1605',
+      id: 'antigravity-1605',
       schedule: '5 16 * * 1,3,5',
       recurrence: { type: 'weekdays', weekdays: ['mon', 'wed', 'fri'] },
     },

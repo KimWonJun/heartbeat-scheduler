@@ -69,7 +69,7 @@ test('buildRegisterTaskScript creates weekly trigger for selected weekdays', () 
     {
       jobs: [
         {
-          id: 'gemini-1605',
+          id: 'antigravity-1605',
           enabled: true,
           recurrence: { type: 'weekdays', weekdays: ['mon', 'wed', 'fri'] },
           schedule: '5 16 * * 1,3,5',

@@ -1,6 +1,6 @@
 import { parseTimeList, timeToCron, timeToJobSuffix } from './time.js';
 
-export const SUPPORTED_AGENTS = ['claude', 'codex', 'gemini'];
+export const SUPPORTED_AGENTS = ['claude', 'codex', 'antigravity'];
 export const WEEKDAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const DEFAULT_PROMPT = 'test! 출력';
 const DEFAULT_RECURRENCE = { type: 'once' };

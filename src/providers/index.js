@@ -1,6 +1,6 @@
+import { buildAntigravityCommand } from './antigravity.js';
 import { buildClaudeCommand } from './claude.js';
 import { buildCodexCommand } from './codex.js';
-import { buildGeminiCommand } from './gemini.js';
 
 export function buildProviderCommand(job) {
   if (job.provider === 'claude') {
@@ -11,8 +11,8 @@ export function buildProviderCommand(job) {
     return buildCodexCommand(job);
   }
 
-  if (job.provider === 'gemini') {
-    return buildGeminiCommand(job);
+  if (job.provider === 'antigravity') {
+    return buildAntigravityCommand(job);
   }
 
   throw new Error(`Unsupported provider: ${job.provider}`);

@@ -36,7 +36,7 @@ node src\index.js uninstall
 이미 구현된 부분:
 
 - `scheduleProfile` 기반 config
-- Claude, Codex, Gemini provider runner
+- Claude, Codex, Antigravity provider runner
 - `runJob()`의 non-interactive spawn 실행
 - JSONL 로그와 `last-status.json`
 - macOS LaunchAgent installer
@@ -447,7 +447,7 @@ stale cleanup은 이 prefix를 가진 task만 대상으로 합니다.
 - Windows 10 또는 Windows 11
 - Node.js 20+
 - PowerShell 5.1 또는 PowerShell 7+
-- Claude/Codex/Gemini CLI 중 최소 1개 설치
+- Claude/Codex/Antigravity CLI 중 최소 1개 설치
 
 검증 명령:
 

@@ -11,12 +11,12 @@ import {
 } from '../src/test-runner.js';
 
 test('buildDryProbeConfig creates fake jobs for each selected agent', () => {
-  const config = buildDryProbeConfig(['claude', 'gemini'], {
+  const config = buildDryProbeConfig(['claude', 'antigravity'], {
     rootDir: '/tmp/root',
     now: new Date('2026-05-05T00:00:00Z'),
   });
 
-  assert.deepEqual(config.jobs.map((job) => job.id), ['dry-probe-claude', 'dry-probe-gemini']);
+  assert.deepEqual(config.jobs.map((job) => job.id), ['dry-probe-claude', 'dry-probe-antigravity']);
   assert.equal(config.jobs[0].command, process.execPath);
   assert.match(config.jobs[0].commandArgs.at(-1), /dry-probe-ok/);
 });

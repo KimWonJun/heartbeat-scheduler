@@ -156,5 +156,5 @@ function normalizeAgents(agents) {
     return agents;
   }
 
-  return ['claude', 'codex', 'gemini'];
+  return ['claude', 'codex', 'antigravity'];
 }

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Run short local Claude Code, Codex, and Gemini CLI heartbeat prompts on a schedule.",
+  "description": "Run short local Claude Code, Codex, and Antigravity CLI heartbeat prompts on a schedule.",
   "engines": {
     "node": ">=20"
   },

@@ -58,14 +58,14 @@ test('buildLaunchAgentPlist creates persistent daily plist', () => {
 
 test('buildLaunchAgentPlist creates persistent selected-weekday plist array', () => {
   const plist = buildLaunchAgentPlist({
-    label: 'com.local.cli-heartbeat-scheduler.gemini-1605',
+    label: 'com.local.cli-heartbeat-scheduler.antigravity-1605',
     projectDir: '/app',
     configPath: '/app/config.json',
     job: {
-      id: 'gemini-1605',
+      id: 'antigravity-1605',
       recurrence: { type: 'weekdays', weekdays: ['mon', 'wed', 'fri'] },
     },
-    plistPath: '/LaunchAgents/com.local.cli-heartbeat-scheduler.gemini-1605.plist',
+    plistPath: '/LaunchAgents/com.local.cli-heartbeat-scheduler.antigravity-1605.plist',
     runScriptPath: '/app/scripts/run-macos.sh',
     nodeBin: '/node',
     logDir: '/logs',

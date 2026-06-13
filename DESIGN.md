@@ -2,7 +2,7 @@
 
 ## 목표
 
-`cli-heartbeat-scheduler`는 Claude Code, Codex, Gemini CLI에 짧은 로컬 CLI 프롬프트를 정해진 시간에 실행하기 위한 작은 Node.js 프로젝트입니다.
+`cli-heartbeat-scheduler`는 Claude Code, Codex, Antigravity CLI에 짧은 로컬 CLI 프롬프트를 정해진 시간에 실행하기 위한 작은 Node.js 프로젝트입니다.
 
 핵심 목표는 다음과 같습니다.
 
@@ -17,7 +17,7 @@
 
 - 이전 Claude/Codex 대화를 이어가지 않습니다.
 - 장시간 실행되는 agent workflow를 만들지 않습니다.
-- Anthropic/OpenAI/Gemini API를 직접 호출하지 않습니다.
+- provider API를 직접 호출하지 않습니다.
 - provider API key를 저장하거나 관리하지 않습니다.
 - 사용자 프로젝트를 수정하지 않습니다.
 - Claude/Codex의 dangerous permission bypass 옵션을 기본값으로 사용하지 않습니다.
@@ -37,7 +37,7 @@ flowchart TD
   H --> I{"provider"}
   I --> J["Claude runner"]
   I --> K["Codex runner"]
-  I --> L["Gemini runner"]
+  I --> L["Antigravity runner"]
   J --> M["spawn shell:false"]
   K --> M
   L --> M
@@ -66,7 +66,7 @@ flowchart TD
 ```json
 {
   "scheduleProfile": {
-    "agents": ["claude", "codex", "gemini"],
+    "agents": ["claude", "codex", "antigravity"],
     "times": ["06:00", "11:00", "16:00"],
     "recurrence": {
       "type": "daily"
@@ -85,9 +85,9 @@ claude-1600
 codex-0600
 codex-1100
 codex-1600
-gemini-0600
-gemini-1100
-gemini-1600
+antigravity-0600
+antigravity-1100
+antigravity-1600
 ```
 
 active config에는 `scheduleProfile`만 저장합니다. 이렇게 해야 `./setup.sh`를 다시 실행하거나 config를 다시 load할 때 generated job이 중복으로 쌓이지 않습니다.
@@ -142,17 +142,17 @@ codex --ask-for-approval never exec --ephemeral --skip-git-repo-check --sandbox 
 
 Codex는 stdin이 열려 있으면 추가 입력을 기다릴 수 있습니다. 그래서 child process는 `stdio: ['ignore', 'pipe', 'pipe']`로 실행해 stdin을 명시적으로 닫습니다.
 
-### Gemini CLI
+### Antigravity CLI
 
 ```text
-gemini -p <prompt> --approval-mode plan --output-format text
+agy --sandbox --print <prompt>
 ```
 
 설계 의도:
 
-- 짧은 prompt 실행 후 종료
-- mutation/approval 흐름을 피하기 위한 plan mode
-- text output 유지
+- `--print`: 짧은 prompt를 비대화형으로 실행하고 응답 출력
+- `--sandbox`: heartbeat 실행 중 terminal 권한 제한 활성화
+- dangerous permission bypass 옵션은 기본값으로 사용하지 않음
 
 ## 권한과 안전 전략
 
@@ -161,6 +161,7 @@ gemini -p <prompt> --approval-mode plan --output-format text
 - 별도 workdir 사용: `~/.cli-heartbeat-scheduler/workdir`
 - Claude tools 비활성화
 - Codex read-only sandbox 사용
+- Antigravity sandbox 사용
 - provider approval prompt가 뜨면 대기하지 않고 실패
 - `shell: false`로 command injection 위험 축소
 - timeout과 output byte limit 적용
@@ -304,7 +305,7 @@ run result는 다음 상태를 가질 수 있습니다.
 - config validation
 - `scheduleProfile` 확장
 - KST `HH:MM` parser
-- Claude/Codex/Gemini command builder
+- Claude/Codex/Antigravity command builder
 - child stdin close regression
 - timeout handling
 - log writing

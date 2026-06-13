@@ -2,14 +2,14 @@
 
 ## 목표
 
-`./setup.sh` 하나로 Claude Code, Codex, Gemini CLI heartbeat 스케줄을 설정하고 변경할 수 있게 만드는 것이 목표입니다.
+`./setup.sh` 하나로 Claude Code, Codex, Antigravity CLI heartbeat 스케줄을 설정하고 변경할 수 있게 만드는 것이 목표입니다.
 
 사용자는 다음 항목을 선택합니다.
 
 1. 실행할 AI agent
    - Claude Code
    - Codex
-   - Gemini CLI
+   - Antigravity CLI
 2. 실행 시간
    - KST 기준 `HH:MM`
    - 여러 시간 입력 가능: `06:00,11:00,16:00`
@@ -75,7 +75,7 @@ runtime copy:
   "defaultTimeoutMs": 60000,
   "maxOutputBytes": 20000,
   "scheduleProfile": {
-    "agents": ["claude", "codex", "gemini"],
+    "agents": ["claude", "codex", "antigravity"],
     "times": ["06:00", "11:00", "16:00"],
     "recurrence": {
       "type": "daily"
@@ -101,10 +101,10 @@ Codex:
 codex --ask-for-approval never exec --ephemeral --skip-git-repo-check --sandbox read-only <prompt>
 ```
 
-Gemini CLI:
+Antigravity CLI:
 
 ```text
-gemini -p <prompt> --approval-mode plan --output-format text
+agy --sandbox --print <prompt>
 ```
 
 ## macOS LaunchAgent 모델
@@ -149,23 +149,23 @@ LaunchAgent는 Desktop checkout을 직접 실행하지 않습니다. macOS launc
 - `scheduleProfile`을 기존 `jobs` contract로 확장
 - 기존 explicit jobs config와의 호환성 유지
 
-## Phase 2: Gemini Provider
+## Phase 2: Antigravity Provider
 
 상태: 완료
 
 주요 파일:
 
-- `src/providers/gemini.js`
+- `src/providers/antigravity.js`
 - `src/providers/index.js`
 - `src/doctor.js`
 - `test/providers.test.js`
 
 완료 내용:
 
-- `gemini` provider 추가
-- `gemini --version` doctor check
+- `antigravity` provider 추가
+- `agy --help` 기준 headless command check
 - headless command 생성
-- Claude/Codex/Gemini provider routing 테스트
+- Claude/Codex/Antigravity provider routing 테스트
 
 ## Phase 3: Generic macOS Installer
 
