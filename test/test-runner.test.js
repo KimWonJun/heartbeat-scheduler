@@ -21,8 +21,9 @@ test('buildDryProbeConfig creates fake jobs for each selected agent', () => {
   assert.match(config.jobs[0].commandArgs.at(-1), /dry-probe-ok/);
 });
 
-test('runDryProbe uses an isolated LaunchAgents directory by default', async () => {
+test('runDryProbe uses an isolated LaunchAgents directory on darwin', async () => {
   const result = await runDryProbe(['claude'], {
+    platform: 'darwin',
     cleanup: false,
   });
 
@@ -70,4 +71,16 @@ test('runDryProbe creates Windows task scripts without provider calls', async ()
   assert.equal(result.installed.length, 2);
   assert.match(result.taskScriptsDir, /chs-dry-probe-/);
   assert.match(result.installed[0].script, /Register-ScheduledTask/);
+});
+
+test('runDryProbe creates systemd unit pairs on linux without invoking systemctl', async () => {
+  const result = await runDryProbe(['claude', 'codex'], {
+    platform: 'linux',
+    cleanup: false,
+  });
+
+  assert.equal(result.installed.length, 2);
+  assert.match(result.systemdUserDir, /chs-dry-probe-/);
+  assert.match(result.installed[0].service, /run-linux\.sh/);
+  assert.match(result.installed[0].timer, /OnCalendar=/);
 });

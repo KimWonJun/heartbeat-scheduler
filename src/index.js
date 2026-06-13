@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { loadConfig } from './config.js';
 import { runDoctor } from './doctor.js';
-import { defaultConfigPath, defaultLaunchAgentsDir } from './paths.js';
+import { defaultConfigPath, defaultLaunchAgentsDir, defaultSystemdUserDir } from './paths.js';
+import { pruneStaleSystemdUnits } from './platform/linux-systemd.js';
 import { pruneStaleLaunchAgentFiles } from './platform/macos-launch-agent.js';
 import { pruneStaleWindowsTasks } from './platform/windows-task-scheduler.js';
 import { runJob } from './run-job.js';
@@ -46,6 +47,19 @@ async function main(argv) {
       return;
     }
 
+    if (platform === 'linux') {
+      const removed = await pruneStaleSystemdUnits({
+        systemdUserDir: flags.systemdUserDir || defaultSystemdUserDir(),
+        desiredUnitNames: [],
+        unload: flags.load !== 'false',
+      });
+      console.log(`Removed ${removed.length} systemd user unit file(s).`);
+      for (const file of removed) {
+        console.log(`  ${file}`);
+      }
+      return;
+    }
+
     const removed = await pruneStaleLaunchAgentFiles({
       launchAgentsDir: flags.launchAgentsDir || defaultLaunchAgentsDir(),
       desiredLabels: [],
@@ -65,8 +79,11 @@ async function main(argv) {
       const result = await runDryProbe(agents, {
         platform: flags.platform,
       });
-      if ((flags.platform || process.platform) === 'win32') {
+      const platform = flags.platform || process.platform;
+      if (platform === 'win32') {
         console.log(`Dry probe generated ${result.installed.length} task script(s) in ${result.taskScriptsDir}`);
+      } else if (platform === 'linux') {
+        console.log(`Dry probe generated ${result.installed.length} systemd unit pair(s) in ${result.systemdUserDir}`);
       } else {
         console.log(`Dry probe generated ${result.installed.length} plist file(s) in ${result.launchAgentsDir}`);
       }
@@ -174,7 +191,7 @@ function printHelp() {
   node src/index.js setup [--config ~/.cli-heartbeat-scheduler/config.json]
   node src/index.js list [--config <config.json>] [--count 1]
   node src/index.js status [--config <config.json>]
-  node src/index.js test [--config <config.json>] [--mode dry|real] [--agents claude,codex] [--platform win32]
+  node src/index.js test [--config <config.json>] [--mode dry|real] [--agents claude,codex] [--platform win32|linux|darwin]
   node src/index.js uninstall
   node src/index.js doctor [--config <config.json>]
   node src/index.js next [--config <config.json>] [--count 3]
@@ -189,6 +206,14 @@ function printTestResult(testMode, testResult) {
   }
 
   if (testMode === 'dry') {
+    if (testResult.systemdUserDir) {
+      console.log(`Dry probe: ${testResult.installed.length} systemd unit pair(s) generated in ${testResult.systemdUserDir}`);
+      return;
+    }
+    if (testResult.taskScriptsDir) {
+      console.log(`Dry probe: ${testResult.installed.length} task script(s) generated in ${testResult.taskScriptsDir}`);
+      return;
+    }
     console.log(`Dry probe: ${testResult.installed.length} plist file(s) generated in ${testResult.launchAgentsDir}`);
     return;
   }

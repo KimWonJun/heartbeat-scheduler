@@ -2,6 +2,7 @@ import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import { installSystemdUnitFiles, pruneStaleSystemdUnits } from './platform/linux-systemd.js';
 import { installLaunchAgentFiles, pruneStaleLaunchAgentFiles } from './platform/macos-launch-agent.js';
 import { installWindowsScheduledTasks, pruneStaleWindowsTasks } from './platform/windows-task-scheduler.js';
 import { runJob } from './run-job.js';
@@ -34,6 +35,41 @@ export function buildDryProbeConfig(agents, options = {}) {
 export async function runDryProbe(agents, options = {}) {
   const rootDir = options.rootDir || await mkdtemp(path.join(os.tmpdir(), 'chs-dry-probe-'));
   const platform = options.platform || process.platform;
+  if (platform === 'linux') {
+    const load = options.load ?? false;
+    const runtimeDir = options.runtimeDir || path.join(rootDir, 'runtime');
+    const configPath = options.configPath || path.join(runtimeDir, 'config.json');
+    const systemdUserDir = options.systemdUserDir || path.join(rootDir, 'systemd');
+    const runScriptPath = options.runScriptPath || path.join(runtimeDir, 'scripts', 'run-linux.sh');
+    const config = buildDryProbeConfig(agents, {
+      ...options,
+      rootDir,
+    });
+    const result = await installSystemdUnitFiles(config, {
+      ...options,
+      runtimeDir,
+      configPath,
+      systemdUserDir,
+      runScriptPath,
+      load,
+    });
+
+    if (options.cleanup !== false) {
+      await pruneStaleSystemdUnits({
+        systemdUserDir,
+        desiredUnitNames: [],
+        unload: load,
+        runner: options.runner,
+      });
+    }
+
+    return {
+      ...result,
+      rootDir,
+      systemdUserDir,
+    };
+  }
+
   if (platform === 'win32') {
     const load = options.load ?? false;
     const runtimeDir = options.runtimeDir || path.join(rootDir, 'runtime');
